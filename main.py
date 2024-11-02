@@ -6,7 +6,7 @@ import yfinance as yf
 def getUpcomingTickers():
     apikey = "23459325c7mshc3b950155a6f61bp1fbe74jsn16a345f127f2"
 
-    url = 'https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&horizon=12month&apikey=' + apikey
+    url = 'https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&horizon=3month&apikey=' + apikey
     response = requests.get(url)
 
     if response.status_code != 200:
@@ -20,6 +20,7 @@ def getUpcomingTickers():
     filtered_df = filtered_df.sort_values(by=["reportDate", "name"])
 
 def getHistoricalERsForTicker(ticker):
+    print("FETCHING: ", ticker)
     stock = yf.Ticker(ticker)
     earnings_calendar = stock.earnings_dates
     earnings_calendar.index = pd.to_datetime(earnings_calendar.index).tz_convert('America/New_York')
@@ -39,8 +40,9 @@ def getHistoricalERsForTicker(ticker):
             closePrice2 = yf.download(ticker, start=ER_date + pd.Timedelta(days=1), end=ER_date + pd.Timedelta(days=2))['Close']
             closePrice2 = closePrice2.iloc[0] if not closePrice2.empty else None
             
-            percentChange = (closePrice2 - closePrice1) / closePrice1
-            percentChanges.append(f"{round(percentChange.item() * 100, 2)}%")
+            if closePrice1.item() is not None and closePrice1.item() != 0:
+                percentChange = (closePrice2 - closePrice1) / closePrice1
+                percentChanges.append(f"{round(percentChange.item() * 100, 2)}%")
         else:
             #premarket report
             closePrice1 = yf.download(ticker, start=ER_date - pd.Timedelta(days=1), end=ER_date)['Close']
@@ -49,9 +51,10 @@ def getHistoricalERsForTicker(ticker):
             closePrice2 = yf.download(ticker, start=ER_date, end=ER_date + pd.Timedelta(days=1))['Close']
             closePrice2 = closePrice2.iloc[0] if not closePrice2.empty else None
             
-            percentChange = (closePrice2 - closePrice1) / closePrice1 if closePrice1 else None
-            percentChanges.append(f"{round(percentChange.item() * 100, 2)}%")
-
+            if closePrice1.item() is not None and closePrice1.item() != 0:
+                percentChange = (closePrice2 - closePrice1) / closePrice1
+                percentChanges.append(f"{round(percentChange.item() * 100, 2)}%")
+    print("FINISHED: ", ticker)
     print(percentChanges)
         
 
